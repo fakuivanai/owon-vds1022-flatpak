@@ -1,0 +1,36 @@
+{
+  "app-id": "io.github.fakuivan.owon-vds1022-flatpak",
+  "runtime": "org.freedesktop.Platform",
+  "runtime-version": "26.08",
+  "sdk": "org.freedesktop.Sdk",
+  "sdk-extensions": ["org.freedesktop.Sdk.Extension.openjdk21"],
+  "command": "owon-vds1022",
+  "finish-args": [
+    "--socket=x11",
+    "--usb=vnd:5345+dev:1234"
+  ],
+  "modules": [
+    {
+      "name": "openjdk",
+      "buildsystem": "simple",
+      "build-commands": ["/usr/lib/sdk/openjdk21/install.sh"]
+    },
+    {
+      "name": "owon-vds1022",
+      "buildsystem": "simple",
+      "build-commands": ["bash tools/install-payload.sh"],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://github.com/florentbr/OWON-VDS1022/archive/a21cee14fc0807ce804657a26772784c4e47b5ef.tar.gz",
+          "sha256": "730933797069bc8d084394f9ddd92052f253189ae6573c5bcc5497914752c05c",
+          "dest": "upstream"
+        },
+        {"type": "dir", "path": "src", "dest": "src"},
+        {"type": "dir", "path": "tools", "dest": "tools"},
+        {"type": "dir", "path": "data", "dest": "data"},
+        {"type": "dir", "path": "tests", "dest": "tests"}
+      ]
+    }
+  ]
+}

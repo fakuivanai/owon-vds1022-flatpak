@@ -1,0 +1,3 @@
+# Grant raw scope access to the active local user before systemd's seat rules.
+# Source: https://github.com/systemd/systemd/blob/v260/rules.d/73-seat-late.rules.in
+SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="5345", ATTR{idProduct}=="1234", TAG+="uaccess"

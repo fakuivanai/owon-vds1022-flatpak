@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.fakuivan.owon-vds1022-flatpak</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-proprietary</project_license>
+  <name>OWON VDS1022</name>
+  <summary>Capture and inspect oscilloscope waveforms</summary>
+  <description>
+    <p>Control a VDS1022 or VDS1022I USB oscilloscope, inspect captured signals,
+    and export waveforms, tables and images.</p>
+    <p>This package adds device-specific USB permissions and desktop file dialogs
+    to the unofficial application maintained by florentbr.</p>
+  </description>
+  <launchable type="desktop-id">io.github.fakuivan.owon-vds1022-flatpak.desktop</launchable>
+  <url type="homepage">https://github.com/florentbr/OWON-VDS1022</url>
+  <developer id="io.github.florentbr">
+    <name>OWON and florentbr</name>
+  </developer>
+  <provides><binary>owon-vds1022</binary></provides>
+  <content_rating type="oars-1.1" />
+</component>

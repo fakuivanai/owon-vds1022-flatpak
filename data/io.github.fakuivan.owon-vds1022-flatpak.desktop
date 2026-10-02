@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=OWON VDS1022
+GenericName=Oscilloscope
+Comment=Capture and inspect oscilloscope waveforms
+Exec=owon-vds1022
+Icon=io.github.fakuivan.owon-vds1022-flatpak
+Terminal=false
+Categories=Education;Science;Electronics;Engineering;
+StartupWMClass=com-owon-vds-tiny-Main

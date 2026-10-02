@@ -1,0 +1,9 @@
+*.class
+*.o
+*.so
+*.flatpak
+__pycache__/
+.flatpak-builder/
+
+# Local agent instructions and edit history.
+/FROM_AGENTS_TO_AGENTS.md
