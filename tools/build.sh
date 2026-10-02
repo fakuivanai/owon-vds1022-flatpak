@@ -18,8 +18,9 @@ esac
 
 app_id=io.github.fakuivan.owon-vds1022-flatpak
 builder=${FLATPAK_BUILDER:-flatpak-builder}
-"$builder" --user --force-clean --disable-updates \
+branch=${FLATPAK_BRANCH:-master}
+"$builder" --default-branch="$branch" --user --force-clean --disable-updates \
     --state-dir="$output_dir/state" --repo="$output_dir/repo" \
     "$output_dir/build" "$source_dir/$app_id.json"
 flatpak build-bundle "$output_dir/repo" "$output_dir/$app_id.flatpak" \
-    "$app_id" --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo
+    "$app_id" "$branch" --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo

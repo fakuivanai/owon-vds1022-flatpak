@@ -4,10 +4,10 @@ An unofficial Flatpak package for the VDS1022 and VDS1022I USB oscilloscopes.
 It runs the existing Java application with network access blocked, private
 application storage, and USB and file access through desktop consent dialogs.
 
-This is a personal packaging project, tested on x86_64 Linux with KDE.
-Live acquisition and PNG export work on the tested setup. Other desktops must
-provide the USB portal. See [VALIDATION.md](VALIDATION.md) for the tested versions
-and limits of those checks.
+This is a personal packaging project. The Rust adapter was tested on x86_64
+Linux with KDE, including one USB consent prompt, live acquisition and PNG
+export to the Desktop. Other desktops must provide the USB portal.
+See [VALIDATION.md](VALIDATION.md) for the tested versions and limits.
 
 ## Permissions
 
@@ -49,7 +49,8 @@ Add the Flathub remote and install the build dependencies:
 flatpak --user remote-add --if-not-exists flathub \
   https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak --user install flathub org.freedesktop.Platform//26.08 \
-  org.freedesktop.Sdk//26.08 org.freedesktop.Sdk.Extension.openjdk21//26.08
+  org.freedesktop.Sdk//26.08 org.freedesktop.Sdk.Extension.openjdk21//26.08 \
+  org.freedesktop.Sdk.Extension.rust-stable//26.08
 ```
 
 Run these commands from the repository root. The output directory holds
@@ -64,8 +65,10 @@ flatpak --user install --noninteractive "$output_dir/repo" \
 flatpak run io.github.fakuivan.owon-vds1022-flatpak
 ```
 
-The build downloads a pinned upstream archive and checks its SHA-256. Build
-downloads require network access on the host; the installed app has none.
+The build downloads a pinned upstream archive and the Rust crates listed in
+`Cargo.lock`, checking their SHA-256 hashes. Cargo compiles the adapter offline
+from those inputs. Downloads require network access on the host; the installed
+app has none.
 The bundle is `$output_dir/io.github.fakuivan.owon-vds1022-flatpak.flatpak`.
 Review [third-party terms](THIRD_PARTY.md) before distributing a bundle.
 
@@ -129,7 +132,7 @@ at build time. It does not run the upstream installer.
 | Path | Contents |
 | --- | --- |
 | `src/java/` | USB compatibility class and Swing file-chooser adapters |
-| `src/native/` | USB descriptor handling, libusb transfers and D-Bus portal calls |
+| `src/native/` | Rust JNI adapter, USB descriptor handling, libusb transfers and D-Bus portal calls |
 | `tools/` | Build, JAR patching and launch scripts |
 | `tests/` | Private portal mocks, lifecycle tests and installed sandbox probes |
 | `data/` | Desktop entry and AppStream metadata |
@@ -139,6 +142,16 @@ After installation, `python3 tests/sandbox.py` checks the sandbox without openin
 the GUI, requesting USB consent, or sending commands to the scope.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for adapter tests and changes to the pinned
 upstream version, and [VALIDATION.md](VALIDATION.md) for hardware checks.
+
+To install a separate branch for Rust validation:
+
+```sh
+rust_output_dir=$(mktemp -d)
+FLATPAK_BRANCH=rust ./tools/build.sh "$rust_output_dir"
+flatpak --user install --noninteractive "$rust_output_dir/repo" \
+  io.github.fakuivan.owon-vds1022-flatpak//rust
+flatpak run --branch=rust io.github.fakuivan.owon-vds1022-flatpak
+```
 
 ## Licensing and upstream
 

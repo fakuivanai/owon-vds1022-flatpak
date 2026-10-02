@@ -7,3 +7,7 @@ __pycache__/
 
 # Local agent instructions and edit history.
 /FROM_AGENTS_TO_AGENTS.md
+
+# Rust build outputs; keep them outside the checkout.
+/target/
+/src/native/target/

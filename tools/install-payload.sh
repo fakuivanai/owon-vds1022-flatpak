@@ -23,14 +23,11 @@ cp upstream/lib/*.jar "$app_dir/lib/"
 "$jdk/bin/jar" --update --file "$app_dir/lib/owon-vds-tiny-1.1.5-cf19.jar" \
     -C patch-classes .
 
-# Word splitting here is intentional: pkg-config emits compiler arguments.
-# shellcheck disable=SC2046
-cc -std=c11 -O2 -g -Wall -Wextra -Werror -fPIC -shared \
-    -I"$jdk/include" -I"$jdk/include/linux" \
-    $(pkg-config --cflags gio-unix-2.0 libusb-1.0) \
-    src/native/portal.c src/native/usb.c src/native/files.c \
-    -o /app/lib/libvdsportal.so \
-    $(pkg-config --libs gio-unix-2.0 libusb-1.0)
+cargo build --offline --locked --release --lib --manifest-path src/native/Cargo.toml
+install -m755 src/native/target/release/libvdsportal.so /app/lib/libvdsportal.so
+while IFS= read -r -d '' notice; do
+    install -Dm644 "$notice" "/app/share/licenses/vdsportal/${notice#cargo/vendor/}"
+done < <(find cargo/vendor -type f \( -iname 'license*' -o -iname 'copying*' -o -iname 'notice*' -o -iname 'copyright*' \) -print0)
 
 mkdir -p /app/share/owon-vds1022-flatpak/tests
 "$jdk/bin/javac" --release 17 -Xlint:all \

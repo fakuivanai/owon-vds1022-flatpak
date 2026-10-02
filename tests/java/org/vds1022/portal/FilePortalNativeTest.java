@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-/** Run only against tests/file-portal-mock.c on a private D-Bus session. */
+/** Run only against the Rust file-portal-mock binary on a private D-Bus session. */
 public final class FilePortalNativeTest {
     private static void check(boolean condition, String message) {
         if (!condition) throw new AssertionError(message);
@@ -19,6 +19,19 @@ public final class FilePortalNativeTest {
             throw new AssertionError("The portal accepted an " + reason + " format");
         } catch (IOException expected) {
             check(expected.getMessage().contains(reason), "Reject the " + reason + " filter response");
+        }
+    }
+
+    private interface NativeRequest {
+        void run() throws IOException;
+    }
+
+    private static void invalidRequest(NativeRequest request, String reason) throws IOException {
+        try {
+            request.run();
+            throw new AssertionError("The native chooser accepted invalid " + reason);
+        } catch (IOException expected) {
+            check(expected.getMessage().contains(reason), "Reject invalid " + reason + " before requesting access");
         }
     }
 
@@ -51,6 +64,33 @@ public final class FilePortalNativeTest {
             "Preserve the exact CSV file grant");
         rejected(filters, "unknown");
         rejected(Arrays.asList(filters.get(1), filters.get(1)), "ambiguous");
+        // These invalid arguments must fail before sending another portal request.
+        invalidRequest(() -> FilePortal.NATIVE.choose(false, "bad\u0000title", "", "", filters,
+            0, true, false, ""), "NUL");
+        invalidRequest(() -> FilePortal.NATIVE.choose(false, "Captura ñ 💡", "bad\u0000name", "", filters,
+            0, true, false, ""), "NUL");
+        invalidRequest(() -> FilePortal.NATIVE.choose(false, "Captura ñ 💡", "", "bad\u0000folder", filters,
+            0, true, false, ""), "NUL");
+        invalidRequest(() -> FilePortal.NATIVE.choose(false, "Captura ñ 💡", "", "", filters,
+            0, true, false, "bad\u0000label"), "NUL");
+        invalidRequest(() -> FilePortal.NATIVE.choose(false, "bad\uD800title", "", "", filters,
+            0, true, false, ""), "UTF-16");
+        List<FilePortal.Filter> invalidLabel = Arrays.asList(new FilePortal.Filter(filters.get(0).original,
+            "bad\u0000filter", new String[] {"*.png"}, "png"));
+        invalidRequest(() -> FilePortal.NATIVE.choose(false, "Captura ñ 💡", "", "", invalidLabel,
+            0, true, false, ""), "NUL");
+        List<FilePortal.Filter> invalidPattern = Arrays.asList(new FilePortal.Filter(filters.get(0).original,
+            "PNG", new String[] {"*.\u0000png"}, "png"));
+        invalidRequest(() -> FilePortal.NATIVE.choose(false, "Captura ñ 💡", "", "", invalidPattern,
+            0, true, false, ""), "NUL");
+        invalidRequest(() -> FilePortal.NATIVE.choose(false, "Captura ñ 💡", "", "", filters,
+            -1, true, false, ""), "filters");
+        invalidRequest(() -> FilePortal.NATIVE.choose(false, "Captura ñ 💡", "", "", filters,
+            filters.size(), true, false, ""), "filters");
+        List<FilePortal.Filter> missingPatterns = Arrays.asList(new FilePortal.Filter(filters.get(0).original,
+            "PNG", null, "png"));
+        invalidRequest(() -> FilePortal.NATIVE.choose(false, "Captura ñ 💡", "", "", missingPatterns,
+            0, true, false, ""), "patterns");
         System.out.println("Native file portal tests passed.");
     }
 }

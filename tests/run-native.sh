@@ -19,7 +19,7 @@ esac
 test -x "$jdk/bin/java"
 test -x "$jdk/bin/javac"
 test -d "$app_lib"
-for tool in cc pkg-config dbus-daemon dbus-run-session; do
+for tool in cargo pkg-config dbus-daemon dbus-run-session; do
     command -v "$tool" >/dev/null
 done
 pkg-config --atleast-version=1.0.27 libusb-1.0
@@ -29,33 +29,14 @@ classes="$run_dir/classes"
 mkdir -p -- "$classes"
 cd -- "$source_dir"
 
-# Word splitting is intentional: pkg-config emits compiler arguments.
-# shellcheck disable=SC2046
-cc -std=c11 -g -Wall -Wextra -Werror -Isrc/native \
-    $(pkg-config --cflags gio-2.0) tests/PortalRequestTest.c src/native/portal.c \
-    -o "$run_dir/portal-request-test" $(pkg-config --libs gio-2.0)
-# shellcheck disable=SC2046
-cc -std=c11 -g -Wall -Wextra -Werror -Isrc/native \
-    -I"$jdk/include" -I"$jdk/include/linux" \
-    $(pkg-config --cflags gio-unix-2.0 libusb-1.0) \
-    tests/usb-properties-test.c src/native/portal.c \
-    -o "$run_dir/usb-properties-test" $(pkg-config --libs gio-unix-2.0 libusb-1.0)
-# shellcheck disable=SC2046
-cc -std=c11 -g -Wall -Wextra -Werror -Isrc/native \
-    -I"$jdk/include" -I"$jdk/include/linux" \
-    $(pkg-config --cflags gio-unix-2.0 libusb-1.0) \
-    tests/usb-grant-lifetime-test.c \
-    -o "$run_dir/usb-grant-lifetime-test" $(pkg-config --libs gio-unix-2.0 libusb-1.0)
-# shellcheck disable=SC2046
-cc -std=c11 -g -Wall -Wextra -Werror \
-    $(pkg-config --cflags gio-2.0) tests/file-portal-mock.c \
-    -o "$run_dir/file-portal-mock" $(pkg-config --libs gio-2.0)
-# shellcheck disable=SC2046
-cc -std=c11 -g -Wall -Wextra -Werror -fPIC -shared \
-    -I"$jdk/include" -I"$jdk/include/linux" \
-    $(pkg-config --cflags gio-unix-2.0 libusb-1.0) \
-    src/native/portal.c src/native/usb.c src/native/files.c \
-    -o "$run_dir/libvdsportal.so" $(pkg-config --libs gio-unix-2.0 libusb-1.0)
+export CARGO_TARGET_DIR=${CARGO_TARGET_DIR:-"$run_dir/target"}
+case "$(realpath -m -- "$CARGO_TARGET_DIR")/" in
+    "$source_dir/"*) printf 'Keep Cargo outputs outside the source repository.\n' >&2; exit 2 ;;
+esac
+cargo test --offline --locked --all-targets --manifest-path src/native/Cargo.toml
+cargo build --offline --locked --lib --bins --manifest-path src/native/Cargo.toml
+native_dir="$CARGO_TARGET_DIR/debug"
+
 # Swing's chooser is not persisted with Java serialization.
 "$jdk/bin/javac" --release 17 -Xlint:all,-serial -Werror -cp "$app_lib/*" -d "$classes" \
     src/java/com/owon/uppersoft/vds/core/usb/CDevice.java \
@@ -63,15 +44,11 @@ cc -std=c11 -g -Wall -Wextra -Werror -fPIC -shared \
     tests/java/org/vds1022/portal/FilePortalNativeTest.java \
     tests/java/org/vds1022/portal/PortalFileChooserTest.java
 
-cd -- "$run_dir"
-"$run_dir/portal-request-test"
-"$run_dir/usb-properties-test"
-"$run_dir/usb-grant-lifetime-test"
-"$jdk/bin/java" -Djava.awt.headless=true -Djava.library.path="$run_dir" \
+"$jdk/bin/java" -Djava.awt.headless=true -Djava.library.path="$native_dir" \
     -cp "$classes:$app_lib/*" UsbBackendTest
-"$jdk/bin/java" -Djava.awt.headless=true -Djava.library.path="$run_dir" \
+"$jdk/bin/java" -Djava.awt.headless=true -Djava.library.path="$native_dir" \
     -cp "$classes:$app_lib/*" org.vds1022.portal.PortalFileChooserTest
-# A private bus without system configuration or activation of desktop services.
+# The private bus has no desktop activation configuration or hardware access.
 cat > "$run_dir/session.conf" <<'CONFIG'
 <busconfig>
   <type>session</type>
@@ -86,5 +63,5 @@ cat > "$run_dir/session.conf" <<'CONFIG'
 CONFIG
 dbus-run-session --config-file "$run_dir/session.conf" -- \
     env FILE_PORTAL_PRIVATE_BUS=1 bash "$source_dir/tests/run-file-portal-native.sh" \
-    "$run_dir/file-portal-mock" "$jdk/bin/java" "$run_dir" "$classes:$app_lib/*"
+    "$native_dir/file-portal-mock" "$jdk/bin/java" "$native_dir" "$classes:$app_lib/*"
 printf 'Native tests passed. Outputs: %s\n' "$run_dir"

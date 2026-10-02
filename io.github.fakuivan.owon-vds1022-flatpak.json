@@ -3,7 +3,10 @@
   "runtime": "org.freedesktop.Platform",
   "runtime-version": "26.08",
   "sdk": "org.freedesktop.Sdk",
-  "sdk-extensions": ["org.freedesktop.Sdk.Extension.openjdk21"],
+  "sdk-extensions": [
+    "org.freedesktop.Sdk.Extension.openjdk21",
+    "org.freedesktop.Sdk.Extension.rust-stable"
+  ],
   "command": "owon-vds1022",
   "finish-args": [
     "--socket=x11",
@@ -13,12 +16,16 @@
     {
       "name": "openjdk",
       "buildsystem": "simple",
-      "build-commands": ["/usr/lib/sdk/openjdk21/install.sh"]
+      "build-commands": [
+        "/usr/lib/sdk/openjdk21/install.sh"
+      ]
     },
     {
       "name": "owon-vds1022",
       "buildsystem": "simple",
-      "build-commands": ["bash tools/install-payload.sh"],
+      "build-commands": [
+        "bash tools/install-payload.sh"
+      ],
       "sources": [
         {
           "type": "archive",
@@ -26,11 +33,34 @@
           "sha256": "730933797069bc8d084394f9ddd92052f253189ae6573c5bcc5497914752c05c",
           "dest": "upstream"
         },
-        {"type": "dir", "path": "src", "dest": "src"},
-        {"type": "dir", "path": "tools", "dest": "tools"},
-        {"type": "dir", "path": "data", "dest": "data"},
-        {"type": "dir", "path": "tests", "dest": "tests"}
-      ]
+        {
+          "type": "dir",
+          "path": "src",
+          "dest": "src"
+        },
+        {
+          "type": "dir",
+          "path": "tools",
+          "dest": "tools"
+        },
+        {
+          "type": "dir",
+          "path": "data",
+          "dest": "data"
+        },
+        {
+          "type": "dir",
+          "path": "tests",
+          "dest": "tests"
+        },
+        "cargo-sources.json"
+      ],
+      "build-options": {
+        "append-path": "/usr/lib/sdk/rust-stable/bin",
+        "env": {
+          "CARGO_HOME": "/run/build/owon-vds1022/cargo"
+        }
+      }
     }
   ]
 }

@@ -26,9 +26,31 @@ records these origins:
 
 The build copies the application JARs, FPGA images, icon and documentation,
 patches the GUI JAR, and installs the component notice alongside the application.
-It compiles an original native bridge against the SDK's GLib/GIO and libusb.
+It compiles an original Rust JNI bridge using the crates listed below and
+links against the SDK's libusb.
 It does not copy the upstream native USB libraries. OpenJDK comes from the
 Freedesktop SDK extension.
+
+## Rust dependencies
+
+`src/native/Cargo.lock` records exact versions and checksums for direct and
+transitive dependencies. `cargo-sources.json` supplies matching crate archives
+for the offline Flatpak build. The direct crates declare these licenses:
+
+| Crate | Locked version | Declared license |
+| --- | --- | --- |
+| [jni](https://crates.io/crates/jni/0.22.4) | `0.22.4` | MIT or Apache-2.0 |
+| [rusb](https://crates.io/crates/rusb/0.9.4) | `0.9.4` | MIT |
+| [zbus](https://crates.io/crates/zbus/5.19.0) | `5.19.0` | MIT |
+| [tokio](https://crates.io/crates/tokio/1.53.1) | `1.53.1` | MIT |
+| [futures-util](https://crates.io/crates/futures-util/0.3.34) | `0.3.34` | MIT or Apache-2.0 |
+| [serde](https://crates.io/crates/serde/1.0.229) | `1.0.229` | MIT or Apache-2.0 |
+
+These declarations apply to the dependencies, not to this repository's
+original sources. Preserve required dependency notices, including those for
+transitive crates, when redistributing a compiled adapter. The crate archives
+retain their supplied notice files in the build's vendor directory. The build
+installs those files under `/app/share/licenses/vdsportal/`.
 
 ## Before distributing a bundle
 
